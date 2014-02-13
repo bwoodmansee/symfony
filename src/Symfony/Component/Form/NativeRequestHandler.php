@@ -79,6 +79,18 @@ class NativeRequestHandler implements RequestHandlerInterface
                 return;
             }
 
+            if(is_array($params)) {
+                foreach($params as $key => $value) {
+                    if (is_array($value) && $form->has($key)) {
+                        $childForm = $form->get($key);
+                        if ($childForm->getConfig()->hasOption('allow_delete')
+                            && $childForm->getConfig()->hasOption('allow_delete')) {
+                            $params[$key] = array_values($value);
+                        }
+                    }
+                }
+            }
+
             if (is_array($params) && is_array($files)) {
                 $data = array_replace_recursive($params, $files);
             } else {
