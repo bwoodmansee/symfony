@@ -249,13 +249,59 @@ abstract class AbstractRequestHandlerTest extends \PHPUnit_Framework_TestCase
         $this->requestHandler->handleRequest($form, $this->request);
     }
 
+    /**
+     * @dataProvider methodExceptGetProvider
+     */
+    public function testSubmitRemovedParamWithAllowDelete($method)
+    {
+        $form = $this->getMockForm('param1', $method);
+        $childForm = $this->getMockForm('collection', $method, false, array('allow_delete' => true));
+        $form->expects($this->once())
+            ->method('has')
+            ->with('collection')
+            ->will($this->returnValue(true));
+        $form->expects($this->once())
+            ->method('get')
+            ->with('collection')
+            ->will($this->returnValue($childForm));
+
+        $this->setRequestData(
+            $method,
+            array(
+                'param1' => array(
+                    'foo'   =>  'bar',
+                    'collection'    => array(
+                        1   =>  'foo',
+                        3   =>  'bar'
+                    )
+                )
+            )
+        );
+
+        $expectedData = array();
+
+        $form->expects($this->once())
+            ->method('submit')
+            ->with(
+                array(
+                    'foo'   =>  'bar',
+                    'collection'    => array(
+                        0   =>  'foo',
+                        1   =>  'bar'
+                    )
+                ),
+                'PATCH' !== $method
+            );
+        $this->requestHandler->handleRequest($form, $this->request);
+    }
+
     abstract protected function setRequestData($method, $data, $files = array());
 
     abstract protected function getRequestHandler();
 
     abstract protected function getMockFile();
 
-    protected function getMockForm($name, $method = null, $compound = true)
+    protected function getMockForm($name, $method = null, $compound = true, $options = array())
     {
         $config = $this->getMock('Symfony\Component\Form\FormConfigInterface');
         $config->expects($this->any())
@@ -264,6 +310,18 @@ abstract class AbstractRequestHandlerTest extends \PHPUnit_Framework_TestCase
         $config->expects($this->any())
             ->method('getCompound')
             ->will($this->returnValue($compound));
+
+        foreach($options as $key => $value) {
+            $config->expects($this->any())
+                ->method('hasOption')
+                ->with($key)
+                ->will($this->returnValue(true));
+
+            $config->expects($this->any())
+                ->method('getOption')
+                ->with($key)
+                ->will($this->returnValue($value));
+        }
 
         $form = $this->getMock('Symfony\Component\Form\Test\FormInterface');
         $form->expects($this->any())

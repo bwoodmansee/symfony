@@ -70,7 +70,7 @@ class HttpFoundationRequestHandler implements RequestHandlerInterface
                     if (is_array($value) && $form->has($key)) {
                         $childForm = $form->get($key);
                         if ($childForm->getConfig()->hasOption('allow_delete')
-                            && $childForm->getConfig()->hasOption('allow_delete')) {
+                            && $childForm->getConfig()->getOption('allow_delete')) {
                             $params[$key] = array_values($value);
                         }
                     }
